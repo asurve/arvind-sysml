@@ -46,6 +46,7 @@ OPTIONS
 
 --releaseVersion     - Release identifier used when publishing
 --developmentVersion - Release identifier used for next development cyce
+--gitBranch          - Branch on which to do the release operation 
 --releaseRc          - Release RC identifier used when publishing, default 'rc1'
 --tag                - Release Tag identifier used when taging the release, default 'v$releaseVersion'
 --gitCommitHash      - Release tag or commit to build from, default master HEAD
@@ -111,6 +112,10 @@ while [ "${1+defined}" ]; do
       ;;
     --developmentVersion)
       DEVELOPMENT_VERSION="${PARTS[1]}"
+      shift
+      ;;
+    --gitBranch)
+      GIT_BRANCH="${PARTS[1]}"
       shift
       ;;
     --releaseRc)
@@ -228,6 +233,17 @@ function checkout_code {
     git clone https://git-wip-us.apache.org/repos/asf/incubator-systemml.git
     cd incubator-systemml
     git checkout $GIT_REF
+
+    if [[ "$GIT_BRANCH" ]]; then
+        # Fetch any new branches	(Not sure if this needed, won't hurt)
+	git fetch origin
+
+	# Get remote branch to work on
+	git checkout -b $GIT_BRANCH Origin/$GIT_BRANCH
+    else
+	git checkout $GIT_REF
+    fi
+
     git_hash=`git rev-parse --short HEAD`
     echo "Checked out SystemML git hash $git_hash"
 
@@ -282,7 +298,7 @@ if [[ "$RELEASE_PUBLISH" == "true" ]]; then
     cd $RELEASE_WORK_DIR/incubator-systemml
 
     #Deploy scala 2.10
-    mvn -DaltDeploymentRepository=apache.releases.https::default::https://repository.apache.org/service/local/staging/deploy/maven2 clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests" -Dgpg.passphrase=$GPG_PASSPHRASE $PUBLISH_PROFILES
+    mvn -DaltDeploymentRepository=apache.releases.https::default::https://repository.apache.org/service/local/staging/deploy/maven2 clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests -Dgpg.passphrase=\"$GPG_PASSPHRASE\"" -Dgpg.passphrase="$GPG_PASSPHRASE" $PUBLISH_PROFILES
 
     cd "$BASE_DIR" #exit target
 
@@ -308,7 +324,7 @@ if [[ "$RELEASE_SNAPSHOT" == "true" ]]; then
     fi
 
     #Deploy scala 2.10
-    $MVN -DaltDeploymentRepository=apache.snapshots.https::default::https://repository.apache.org/content/repositories/snapshots clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests" -Dgpg.passphrase=$GPG_PASSPHRASE $PUBLISH_PROFILES
+    $MVN -DaltDeploymentRepository=apache.snapshots.https::default::https://repository.apache.org/content/repositories/snapshots clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests -Dgpg.passphrase=\"$GPG_PASSPHRASE\"" -Dgpg.passphrase="$GPG_PASSPHRASE" $PUBLISH_PROFILES
 
     cd "$BASE_DIR" #exit target
     exit 0
