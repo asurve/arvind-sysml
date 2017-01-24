@@ -230,16 +230,20 @@ function checkout_code {
     rm -rf $RELEASE_WORK_DIR
     mkdir $RELEASE_WORK_DIR
     cd $RELEASE_WORK_DIR
-    git clone https://git-wip-us.apache.org/repos/asf/incubator-systemml.git
-    cd incubator-systemml
-    git checkout $GIT_REF
+    if [[ "$GIT_BRANCH" ]]; then
+        git clone -b $GIT_BRANCH https://github.com/asurve/arvind-sysml.git 
+    else
+        git clone https://github.com/asurve/arvind-sysml.git 
+    fi
+
+    cd arvind-sysml
 
     if [[ "$GIT_BRANCH" ]]; then
         # Fetch any new branches	(Not sure if this needed, won't hurt)
 	git fetch origin
 
 	# Get remote branch to work on
-	git checkout -b $GIT_BRANCH Origin/$GIT_BRANCH
+	git checkout $GIT_BRANCH
     else
 	git checkout $GIT_REF
     fi
@@ -258,7 +262,7 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     echo "Preparing release $RELEASE_VERSION"
     # Checkout code
     checkout_code
-    cd $RELEASE_WORK_DIR/incubator-systemml
+    cd $RELEASE_WORK_DIR/arvind-sysml
 
     # Build and prepare the release
     $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
@@ -268,7 +272,7 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     if [ -z "$DRY_RUN" ]; then
         svn co $RELEASE_STAGING_LOCATION svn-release-staging
         mkdir -p svn-release-staging/$RELEASE_VERSION-$RELEASE_RC
-        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/arvind-sysml/target/systemml-* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
 
         cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
         rm -f *.asc
@@ -295,7 +299,7 @@ if [[ "$RELEASE_PUBLISH" == "true" ]]; then
     echo "Preparing release $RELEASE_VERSION"
     # Checkout code
     checkout_code
-    cd $RELEASE_WORK_DIR/incubator-systemml
+    cd $RELEASE_WORK_DIR/arvind-sysml
 
     #Deploy scala 2.10
     mvn -DaltDeploymentRepository=apache.releases.https::default::https://repository.apache.org/service/local/staging/deploy/maven2 clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests -Dgpg.passphrase=\"$GPG_PASSPHRASE\"" -Dgpg.passphrase="$GPG_PASSPHRASE" $PUBLISH_PROFILES
@@ -309,7 +313,7 @@ fi
 if [[ "$RELEASE_SNAPSHOT" == "true" ]]; then
     # Checkout code
     checkout_code
-    cd $RELEASE_WORK_DIR/incubator-systemml
+    cd $RELEASE_WORK_DIR/arvind-sysml
 
     CURRENT_VERSION=$($MVN help:evaluate -Dexpression=project.version \
     | grep -v INFO | grep -v WARNING | grep -v Download)
