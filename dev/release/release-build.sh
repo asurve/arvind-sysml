@@ -204,7 +204,8 @@ if [ -z "$RELEASE_TAG" ]; then
   RELEASE_TAG="v$RELEASE_VERSION-$RELEASE_RC"
 fi
 
-RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/incubator/systemml/"
+# RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/incubator/systemml/"
+RELEASE_STAGING_LOCATION="file:///Users/asurve/repos/dist/dev/arvind/sysml/"
 
 
 echo "  "
