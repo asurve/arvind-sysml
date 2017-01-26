@@ -46,6 +46,7 @@ OPTIONS
 
 --releaseVersion     - Release identifier used when publishing
 --developmentVersion - Release identifier used for next development cyce
+--gitBranch          - Branch on which to do the release operation 
 --releaseRc          - Release RC identifier used when publishing, default 'rc1'
 --tag                - Release Tag identifier used when taging the release, default 'v$releaseVersion'
 --gitCommitHash      - Release tag or commit to build from, default master HEAD
@@ -111,6 +112,10 @@ while [ "${1+defined}" ]; do
       ;;
     --developmentVersion)
       DEVELOPMENT_VERSION="${PARTS[1]}"
+      shift
+      ;;
+    --gitBranch)
+      GIT_BRANCH="${PARTS[1]}"
       shift
       ;;
     --releaseRc)
@@ -199,7 +204,8 @@ if [ -z "$RELEASE_TAG" ]; then
   RELEASE_TAG="v$RELEASE_VERSION-$RELEASE_RC"
 fi
 
-RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/incubator/systemml/"
+# RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/incubator/systemml/"
+RELEASE_STAGING_LOCATION="file:///Users/asurve/repos/dist/dev/arvind/sysml/"
 
 
 echo "  "
@@ -223,10 +229,10 @@ echo "  "
 function checkout_code {
     # Checkout code
     rm -rf $RELEASE_WORK_DIR
-    mkdir $RELEASE_WORK_DIR
+    mkdir -p $RELEASE_WORK_DIR
     cd $RELEASE_WORK_DIR
-    git clone https://git-wip-us.apache.org/repos/asf/incubator-systemml.git
-    cd incubator-systemml
+    git clone https://github.com/asurve/arvind-sysml.git 
+    cd arvind-sysml
     git checkout $GIT_REF
     git_hash=`git rev-parse --short HEAD`
     echo "Checked out SystemML git hash $git_hash"
@@ -242,7 +248,7 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     echo "Preparing release $RELEASE_VERSION"
     # Checkout code
     checkout_code
-    cd $RELEASE_WORK_DIR/incubator-systemml
+    cd $RELEASE_WORK_DIR/arvind-sysml
 
     # Build and prepare the release
     $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
@@ -252,7 +258,7 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     if [ -z "$DRY_RUN" ]; then
         svn co $RELEASE_STAGING_LOCATION svn-release-staging
         mkdir -p svn-release-staging/$RELEASE_VERSION-$RELEASE_RC
-        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/arvind-sysml/target/systemml-* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
 
         cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
         rm -f *.asc
@@ -279,10 +285,10 @@ if [[ "$RELEASE_PUBLISH" == "true" ]]; then
     echo "Preparing release $RELEASE_VERSION"
     # Checkout code
     checkout_code
-    cd $RELEASE_WORK_DIR/incubator-systemml
+    cd $RELEASE_WORK_DIR/arvind-sysml
 
     #Deploy scala 2.10
-    mvn -DaltDeploymentRepository=apache.releases.https::default::https://repository.apache.org/service/local/staging/deploy/maven2 clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests" -Dgpg.passphrase=$GPG_PASSPHRASE $PUBLISH_PROFILES
+    mvn -DaltDeploymentRepository=apache.releases.https::default::https://repository.apache.org/service/local/staging/deploy/maven2 clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests -Dgpg.passphrase=\"$GPG_PASSPHRASE\"" -Dgpg.passphrase="$GPG_PASSPHRASE" $PUBLISH_PROFILES
 
     cd "$BASE_DIR" #exit target
 
@@ -293,7 +299,7 @@ fi
 if [[ "$RELEASE_SNAPSHOT" == "true" ]]; then
     # Checkout code
     checkout_code
-    cd $RELEASE_WORK_DIR/incubator-systemml
+    cd $RELEASE_WORK_DIR/arvind-sysml
 
     CURRENT_VERSION=$($MVN help:evaluate -Dexpression=project.version \
     | grep -v INFO | grep -v WARNING | grep -v Download)
@@ -308,7 +314,7 @@ if [[ "$RELEASE_SNAPSHOT" == "true" ]]; then
     fi
 
     #Deploy scala 2.10
-    $MVN -DaltDeploymentRepository=apache.snapshots.https::default::https://repository.apache.org/content/repositories/snapshots clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests" -Dgpg.passphrase=$GPG_PASSPHRASE $PUBLISH_PROFILES
+    $MVN -DaltDeploymentRepository=apache.snapshots.https::default::https://repository.apache.org/content/repositories/snapshots clean package gpg:sign install:install deploy:deploy -DskiptTests -Darguments="-DskipTests -Dgpg.passphrase=\"$GPG_PASSPHRASE\"" -Dgpg.passphrase="$GPG_PASSPHRASE" $PUBLISH_PROFILES
 
     cd "$BASE_DIR" #exit target
     exit 0
