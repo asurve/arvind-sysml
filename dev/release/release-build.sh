@@ -258,9 +258,9 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     if [ -z "$DRY_RUN" ]; then
         svn co $RELEASE_STAGING_LOCATION svn-release-staging
         mkdir -p svn-release-staging/$RELEASE_VERSION-$RELEASE_RC
-        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-*-bin.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
-        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-*-src.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
-        cp $RELEASE_WORK_DIR/incubator-systemml/target/systemml-*-python.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/arvind-sysml/target/systemml-*-bin.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/arvind-sysml/target/systemml-*-src.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
+        cp $RELEASE_WORK_DIR/arvind-sysml/target/systemml-*-python.* svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
 
         cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
         rm -f *.asc
