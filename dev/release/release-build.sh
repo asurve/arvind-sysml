@@ -46,10 +46,9 @@ OPTIONS
 
 --releaseVersion     - Release identifier used when publishing
 --developmentVersion - Release identifier used for next development cyce
---gitBranch          - Branch on which to do the release operation 
 --releaseRc          - Release RC identifier used when publishing, default 'rc1'
 --tag                - Release Tag identifier used when taging the release, default 'v$releaseVersion'
---gitCommitHash      - Release tag or commit to build from, default master HEAD
+--gitCommitHash      - Release tag, branch name or commit to build from, default master HEAD
 --dryRun             - Dry run only, mostly used for testing.
 
 A GPG passphrase is expected as an environment variable
@@ -61,6 +60,9 @@ EXAMPLES
 release-build.sh --release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.12.0-SNAPSHOT"
 release-build.sh --release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.12.0-SNAPSHOT" --releaseRc="rc1" --tag="v0.11.0-incubating-rc1"
 release-build.sh --release-prepare --releaseVersion="0.11.0-incubating" --developmentVersion="0.12.0-SNAPSHOT" --releaseRc="rc1" --tag="v0.11.0-incubating-rc1"  --gitCommitHash="a874b73" --dryRun
+
+# Create 0.12 RC2 builds from branch-0.12 
+./release-build.sh --release-prepare --releaseVersion="0.12.0-incubating" --developmentVersion="0.12.1-incubating-SNAPSHOT" --releaseRc="rc2" --tag="v0.12.0-incubating-rc2" --gitCommitHash="branch-0.12"
 
 release-build.sh --release-publish --gitCommitHash="a874b73"
 release-build.sh --release-publish --gitTag="v0.11.0-incubating-rc1"
@@ -112,10 +114,6 @@ while [ "${1+defined}" ]; do
       ;;
     --developmentVersion)
       DEVELOPMENT_VERSION="${PARTS[1]}"
-      shift
-      ;;
-    --gitBranch)
-      GIT_BRANCH="${PARTS[1]}"
       shift
       ;;
     --releaseRc)
@@ -252,6 +250,8 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
 
     # Build and prepare the release
     $MVN $PUBLISH_PROFILES release:clean release:prepare $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
+    ## Rerunning mvn with clean and package goals, as release:prepare changes ordeer for some dependencies like unpack and shade.
+    $MVN $PUBLISH_PROFILES clean package $DRY_RUN -Darguments="-Dgpg.passphrase=\"$GPG_PASSPHRASE\" -DskipTests" -DreleaseVersion="$RELEASE_VERSION" -DdevelopmentVersion="$DEVELOPMENT_VERSION" -Dtag="$RELEASE_TAG"
 
     cd $RELEASE_WORK_DIR
 
